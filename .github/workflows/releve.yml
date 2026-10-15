@@ -1,0 +1,38 @@
+name: releve
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: releve
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GIT_SSH_COMMAND: ssh -i /home/runner/.ssh/id -o IdentitiesOnly=yes -o UserKnownHostsFile=/home/runner/.ssh/known_hosts
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acces au depot de donnees
+        env:
+          KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s
+' "$KEY" > ~/.ssh/id
+          chmod 600 ~/.ssh/id
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git clone --depth 1 git@github.com:${{ github.repository_owner }}/laverie-data.git data
+      - name: Releve
+        run: DATA_DIR=data python3 releve.py
+      - name: Enregistrement
+        working-directory: data
+        run: |
+          git config user.name releve
+          git config user.email releve@users.noreply.github.com
+          git add -A
+          git diff --cached --quiet || git commit -m "releve"
+          git push
