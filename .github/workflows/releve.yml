@@ -21,8 +21,7 @@ jobs:
           KEY: ${{ secrets.DATA_DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s
-' "$KEY" > ~/.ssh/id
+          printf '%s\n' "$KEY" > ~/.ssh/id
           chmod 600 ~/.ssh/id
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git clone --depth 1 git@github.com:${{ github.repository_owner }}/laverie-data.git data
